@@ -13,6 +13,10 @@ defmodule Vaultex.Auth do
     |> handle_response(state)
   end
 
+  def handle(:token, {token}, state) do
+    {:reply, {:ok, :authenticated}, Map.merge(state, %{token: token})}
+  end
+
   def handle(:ec2, {role}, state) do
     pkcs7 = get_aws_pkcs7
     nonce = get_nonce
