@@ -13,6 +13,20 @@ defmodule Vaultex.Auth do
     |> handle_response(state)
   end
 
+  def handle(:ec2, {role}, state) do
+    pkcs7 = get_aws_pkcs7
+    nonce = get_nonce
+    request(:post, "#{state.url}auth/aws-ec2/login", %{"pkcs7": pkcs7, "nonce": nonce, "role": role}, [{"Content-Type", "application/json"}])
+    |> handle_response(state)
+  end
+
+  def get_aws_pkcs7() do
+    result = request(:get, "http://169.254.169.254/latest/dynamic/instance-identity/pkcs7")
+    case result do
+      {:ok, response} -> response.body
+    end
+  end
+
   defp handle_response({:ok, response}, state) do
     case response.body |> Poison.Parser.parse! do
       %{"errors" => messages} -> {:reply, {:error, messages}, state}
@@ -27,4 +41,14 @@ defmodule Vaultex.Auth do
   defp request(method, url, params = %{}, headers) do
     @httpoison.request(method, url, Poison.Encoder.encode(params, []), headers)
   end
+
+  defp request(:get, url) do
+    @httpoison.request(:get, url)
+  end
+
+
+  defp get_nonce() do
+    System.get_env("VAULT_NONCE") || Application.get_env(:vaultex, :nonce) || ""
+  end
+
 end

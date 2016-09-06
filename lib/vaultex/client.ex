@@ -14,7 +14,12 @@ defmodule Vaultex.Client do
   end
 
   def init(state) do
-    url = "#{get_env(:scheme)}://#{get_env(:host)}:#{get_env(:port)}/#{@version}/"
+    addr = get_env(:addr)
+    url = case addr do
+	    nil -> "#{get_env(:scheme)}://#{get_env(:host)}:#{get_env(:port)}/#{@version}/"
+	    _ -> addr
+    end
+
     {:ok, Map.merge(state, %{url: url})}
   end
 
@@ -33,7 +38,7 @@ defmodule Vaultex.Client do
 
     iex> Vaultex.Client.auth(:userpass, {username, password})
     {:error, ["Something didn't work"]}
-  """
+ """
   def auth(method, credentials) do
     GenServer.call(:vaultex, {:auth, method, credentials})
   end
@@ -88,4 +93,9 @@ defmodule Vaultex.Client do
   defp get_env(:scheme) do
       System.get_env("VAULT_SCHEME") || Application.get_env(:vaultex, :scheme) || "http"
   end
+
+  defp get_env(:addr) do
+      System.get_env("VAULT_ADDR") || Application.get_env(:vaultex, :addr) || nil
+  end
+
 end
