@@ -14,7 +14,11 @@ defmodule Vaultex.Auth do
   end
 
   def handle(:token, {token}, state) do
-    {:reply, {:ok, :authenticated}, Map.merge(state, %{token: token})}
+    {:ok, response} = request(:post, "#{state.url}sys/capabilities-self", %{path: "secret/"}, [{"Content-Type", "application/json"}, {"X-Vault-Token", token}])
+    case response.status_code do
+      200 -> {:reply, {:ok, :authenticated}, Map.merge(state, %{token: token})}
+      _-> {:reply, {:error, response.body}, state}
+    end
   end
 
   def handle(:ec2, {role}, state) do
@@ -25,9 +29,10 @@ defmodule Vaultex.Auth do
   end
 
   def get_aws_pkcs7() do
-    result = request(:get, "http://169.254.169.254/latest/dynamic/instance-identity/pkcs7")
-    case result do
-      {:ok, response} -> response.body
+    {:ok, response} = request(:get, "http://169.254.169.254/latest/dynamic/instance-identity/pkcs7")
+    case response.status_code do
+      200 -> response.body
+      _ -> nil
     end
   end
 
