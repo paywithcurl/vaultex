@@ -37,6 +37,8 @@ defmodule Vaultex.Auth do
   end
 
   defp handle_response({:ok, response}, state) do
+    IO.puts("handle_response auth")
+    IO.inspect(response)
     case response.body |> Poison.Parser.parse! do
       %{"errors" => messages} -> {:reply, {:error, messages}, state}
       %{"auth" => properties} -> {:reply, {:ok, :authenticated}, Map.merge(state, %{token: properties["client_token"]})}

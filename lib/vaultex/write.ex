@@ -13,6 +13,8 @@ defmodule Vaultex.Write do
   end
 
   defp handle_response({:ok, response}, state) do
+    IO.puts("handle_response write")
+    IO.inspect(response)
     case response do
       %{status_code: 204} -> {:reply, {:ok}, state}
       _ -> {:reply, {:error, response.body |> Poison.Parser.parse! |> Map.fetch("errors")}, state}
