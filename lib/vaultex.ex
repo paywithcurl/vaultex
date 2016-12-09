@@ -9,6 +9,7 @@ defmodule Vaultex do
     children = [
       # Define workers and child supervisors to be supervised
       worker(Vaultex.Client, []),
+      worker(Vaultex.TokenRenewer, [[name: Vaultex.TokenRenewer]])
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html

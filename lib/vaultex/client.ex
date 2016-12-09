@@ -8,6 +8,7 @@ defmodule Vaultex.Client do
   alias Vaultex.Auth, as: Auth
   alias Vaultex.Read, as: Read
   alias Vaultex.Write, as: Write
+  alias Vaultex.TokenRenew, as: TokenRenew
   @version "v1"
 
   def start_link() do
@@ -90,6 +91,21 @@ defmodule Vaultex.Client do
     GenServer.call(:vaultex, {:write, key, value})
   end
 
+  def token_renew(token, auth_method, credentials) do
+    response = token_renew(token)
+    case response do
+      {:ok} -> response
+      {:error, _} ->
+        with {:ok, _} <- auth(auth_method, credentials),
+          do: token_renew(token)
+    end
+  end
+
+  def token_renew(token) do
+    GenServer.call(:vaultex, {:tokenrenew, token})
+  end
+
+  # callbacks
   def handle_call({:read, key}, _from, state) do
     Read.handle(key, state)
   end
@@ -100,6 +116,10 @@ defmodule Vaultex.Client do
 
   def handle_call({:auth, method, credentials}, _from, state) do
     Auth.handle(method, credentials, state)
+  end
+
+  def handle_call({:tokenrenew, token}, _from, state) do
+    TokenRenew.handle(token, state)
   end
 
   defp get_env(:host) do
