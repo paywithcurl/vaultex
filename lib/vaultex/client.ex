@@ -70,42 +70,52 @@ defmodule Vaultex.Client do
     {:error, ["Key not found"]}
   """
   def read(key, auth_method, credentials) do
-    response = read(key)
-    case response do
-      {:ok, _} -> response
-      {:error, _} ->
-        with {:ok, _} <- auth(auth_method, credentials),
-          do: read(key)
-    end
+    wrap_retry_with_auth(fn -> read(key) end, auth_method, credentials)
   end
 
   defp read(key) do
     GenServer.call(:vaultex, {:read, key})
   end
 
+  @doc """
+  Writes a secret to vault given a path.
+
+  ## Parameters
+
+    - key: A String path to be used for querying vault.
+    - value: A Map of values to store
+    - auth_method: Auth backend to use for authenticating, can be one of [:app_id, :userpass]
+    - credentials: An {app_id, user_id} tuple used for authentication
+
+  ## Examples
+
+    iex> Vaultex.Client.write "secret/foo", %{"test" => 123}, :app_id, {app_id, user_id}
+    {:ok}
+  """
   def write(key, value, auth_method, credentials) do
-    response = write(key, value)
-    case response do
-      {:ok} -> response # 204 write has no response
-      {:ok, _} -> response
-      {:error, _} ->
-        with {:ok, _} <- auth(auth_method, credentials),
-          do: write(key, value)
-    end
+    wrap_retry_with_auth(fn -> write(key, value) end, auth_method, credentials)
   end
 
   defp write(key, value) do
     GenServer.call(:vaultex, {:write, key, value})
   end
 
+  @doc """
+  Renews a token.
+
+  ## Parameters
+
+    - token: A String token to be renewed. It needs to be a renewable token or it will return an error.
+    - auth_method: Auth backend to use for authenticating, can be one of [:app_id, :userpass]
+    - credentials: An {app_id, user_id} tuple used for authentication
+
+  ## Examples
+
+    iex> Vaultex.Client.token_renw "123-456", :app_id, {app_id, user_id}
+    {:ok}
+  """
   def token_renew(token, auth_method, credentials) do
-    response = token_renew(token)
-    case response do
-      {:ok} -> response
-      {:error, _} ->
-        with {:ok, _} <- auth(auth_method, credentials),
-          do: token_renew(token)
-    end
+    wrap_retry_with_auth(fn -> token_renew(token) end, auth_method, credentials)
   end
 
   def token_renew(token) do
@@ -129,6 +139,7 @@ defmodule Vaultex.Client do
     TokenRenew.handle(token, state)
   end
 
+  # environment
   defp get_env(:host) do
     System.get_env("VAULT_HOST") || Application.get_env(:vaultex, :host) || "localhost"
   end
@@ -143,6 +154,18 @@ defmodule Vaultex.Client do
 
   defp get_env(:addr) do
       System.get_env("VAULT_ADDR") || Application.get_env(:vaultex, :addr) || nil
+  end
+
+  # helpers
+  defp wrap_retry_with_auth(cb, auth_method, credentials) do
+    response = cb.()
+    case response do
+      {:ok} -> response
+      {:ok, _} -> response
+      {:error, _} ->
+        with {:ok, _} <- auth(auth_method, credentials),
+          do: cb.()
+    end
   end
 
 end
