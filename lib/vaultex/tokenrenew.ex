@@ -1,5 +1,4 @@
 defmodule Vaultex.TokenRenew do
-  @httpoison Application.get_env(:vaultex, :httpoison) || HTTPoison
 
   def handle(token, %{token: token} = state) do
     request(:post, "#{state.url}auth/token/renew/#{token}", [{"X-Vault-Token", token}])
@@ -22,6 +21,6 @@ defmodule Vaultex.TokenRenew do
   end
 
   defp request(method, url, headers) do
-    @httpoison.request(method, url, "", headers)
+    HTTPoison.request(method, url, "", headers)
   end
 end

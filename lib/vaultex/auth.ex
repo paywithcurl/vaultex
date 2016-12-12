@@ -1,7 +1,4 @@
 defmodule Vaultex.Auth do
-  # Is there a better way to get the default HTTPoison value? When this library is consumed by a Client
-  # the config files in Vaultex appear to be ignored.
-  @httpoison Application.get_env(:vaultex, :httpoison) || HTTPoison
 
   def handle(:app_id, {app_id, user_id}, state) do
     request(:post, "#{state.url}auth/app-id/login", %{app_id: app_id, user_id: user_id}, [{"Content-Type", "application/json"}])
@@ -45,13 +42,12 @@ defmodule Vaultex.Auth do
   end
 
   defp request(method, url, params = %{}, headers) do
-    @httpoison.request(method, url, Poison.Encoder.encode(params, []), headers)
+    HTTPoison.request(method, url, Poison.Encoder.encode(params, []), headers)
   end
 
   defp request(:get, url) do
-    @httpoison.request(:get, url)
+    HTTPoison.request(:get, url)
   end
-
 
   defp get_nonce() do
     System.get_env("VAULT_NONCE") || Application.get_env(:vaultex, :nonce) || ""

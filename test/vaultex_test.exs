@@ -3,43 +3,79 @@ defmodule VaultexTest do
   doctest Vaultex
 
   test "Authentication of app_id and user_id is successful" do
-    assert Vaultex.Client.auth(:app_id, {"good", "whatever"}) == {:ok, :authenticated}
+    assert Vaultex.Client.auth(:app_id, valid_app_id) == {:ok, :authenticated}
   end
 
   test "Authentication of app_id and user_id is unsuccessful" do
-    assert Vaultex.Client.auth(:app_id, {"bad", "whatever"}) == {:error, ["Not Authenticated"]}
+    assert Vaultex.Client.auth(:app_id, invalid_app_id) == {:error, ["invalid user ID or app ID"]}
   end
 
-  test "Authentication of app_id and user_id causes an exception" do
-    assert Vaultex.Client.auth(:app_id, {"boom", "whatever"}) == {:error, ["Bad response from vault", "econnrefused"]}
+  test ":userpass authentication with correct password is successful" do
+    assert Vaultex.Client.auth(:userpass, valid_userpass) == {:ok, :authenticated}
   end
 
-  test "Authentication of userpass is successful" do
-    assert Vaultex.Client.auth(:userpass, {"user", "good"}) == {:ok, :authenticated}
+  test ":userpass authentication with wrong password is unsuccessful" do
+    assert Vaultex.Client.auth(:userpass, invalid_userpass) == {:error, ["invalid username or password"]}
   end
 
-  test "Authentication of userpass is unsuccessful" do
-    assert Vaultex.Client.auth(:userpass, {"user", "bad"}) == {:error, ["Not Authenticated"]}
+  test ":token authentication with invalid token is unsuccessful" do
+    assert Vaultex.Client.auth(:token, invalid_token) == {:error, ["permission denied"]}
   end
 
-  test "Authentication of userpass causes an exception" do
-    assert Vaultex.Client.auth(:userpass, {"user", "boom"}) == {:error, ["Bad response from vault", "econnrefused"]}
+  test ":token authentication with valid token is successful" do
+    assert Vaultex.Client.auth(:token, valid_token) == {:ok, :authenticated}
   end
 
   test "Read of valid secret key returns the correct value" do
-    assert Vaultex.Client.read("secret/foo", :app_id, {"good", "whatever"}) == {:ok, %{"value" => "bar"}}
+    assert Vaultex.Client.read("secret/allowed/read/valid", :userpass, valid_userpass) == {:ok, %{"value" => "bar"}}
   end
 
   test "Read of non existing secret key returns error" do
-    assert Vaultex.Client.read("secret/baz", :app_id, {"good", "whatever"}) == {:error, ["Key not found"]}
+    assert Vaultex.Client.read("secret/allowed/read/invalid", :userpass, valid_userpass) == {:error, ["Key not found"]}
   end
 
-  test "Read of a secret key given bad authentication returns error" do
-    assert Vaultex.Client.read("secret/faz", :app_id, {"bad", "whatever"}) == {:error, ["Not Authenticated"]}
+  test "Read of secret not allowed by policy returns error" do
+    assert Vaultex.Client.read("secret/forbidden/valid", :userpass, valid_userpass) == {:error, ["permission denied"]}
   end
 
-  test "Read of a secret key causes and exception" do
-    assert Vaultex.Client.read("secret/boom", :app_id, {"good", "whatever"}) == {:error, ["Bad response from vault", "econnrefused"]}
+  test "Read of existing secret key given bad authentication returns error" do
+    assert Vaultex.Client.read("secret/allowed_read", :token, invalid_token) == {:error, ["permission denied"]}
+  end
+
+  test "Write of valid secret key returns the correct value" do
+    value = %{"test" => 123, "test2" => 456}
+    assert Vaultex.Client.write("secret/allowed/write/valid", value, :userpass, valid_userpass) == {:ok}
+    assert Vaultex.Client.read("secret/allowed/write/valid", :userpass, valid_userpass) == {:ok, value}
+  end
+
+  test "Token renewal" do
+    {renew_token} = valid_token
+    assert Vaultex.Client.token_renew(renew_token, :token, valid_token) == {:ok}
+  end
+
+  # helpers
+  defp valid_userpass do
+    {System.get_env("TEST_USER"), System.get_env("TEST_PASSWORD")}
+  end
+
+  defp invalid_userpass do
+    {System.get_env("TEST_USER"), "wrong"}
+  end
+
+  defp invalid_token do
+    {"invalid-token"}
+  end
+
+  defp valid_token do
+    {System.get_env("VAULT_TOKEN")}
+  end
+
+  defp valid_app_id do
+    {System.get_env("TEST_APP_ID"), System.get_env("TEST_USER_ID")}
+  end
+
+  defp invalid_app_id do
+    {"invalid", "invalid"}
   end
 
 end
