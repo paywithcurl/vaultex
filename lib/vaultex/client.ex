@@ -8,7 +8,7 @@ defmodule Vaultex.Client do
   alias Vaultex.Auth, as: Auth
   alias Vaultex.Read, as: Read
   alias Vaultex.Write, as: Write
-  alias Vaultex.TokenRenew, as: TokenRenew
+  alias Vaultex.Token, as: Token
   @version "v1"
 
   def start_link() do
@@ -100,6 +100,10 @@ defmodule Vaultex.Client do
     GenServer.call(:vaultex, {:write, key, value})
   end
 
+  def client_token do
+    GenServer.call(:vaultex, {:gettoken})
+  end
+
   @doc """
   Renews a token.
 
@@ -122,6 +126,30 @@ defmodule Vaultex.Client do
     GenServer.call(:vaultex, {:tokenrenew, token})
   end
 
+  def token_renew_self(auth_method, credentials) do
+    wrap_retry_with_auth(fn -> token_renew_self() end, auth_method, credentials)
+  end
+
+  def token_renew_self() do
+    GenServer.call(:vaultex, {:tokenrenewself})
+  end
+
+  def token_lookup(token, auth_method, credentials) do
+    wrap_retry_with_auth(fn -> token_lookup(token) end, auth_method, credentials)
+  end
+
+  def token_lookup(token) do
+    GenServer.call(:vaultex, {:tokenlookup, token})
+  end
+
+  def token_lookup_self(auth_method, credentials) do
+    wrap_retry_with_auth(fn -> token_lookup_self() end, auth_method, credentials)
+  end
+
+  def token_lookup_self() do
+    GenServer.call(:vaultex, {:tokenlookupself})
+  end
+
   # callbacks
   def handle_call({:read, key}, _from, state) do
     Read.handle(key, state)
@@ -136,7 +164,26 @@ defmodule Vaultex.Client do
   end
 
   def handle_call({:tokenrenew, token}, _from, state) do
-    TokenRenew.handle(token, state)
+    Token.handle(:renew, token, state)
+  end
+
+  def handle_call({:tokenrenewself}, _from, state) do
+    Token.handle(:renewself, nil, state)
+  end
+
+  def handle_call({:tokenlookup, token}, _from, state) do
+    Token.handle(:lookup, token, state)
+  end
+
+  def handle_call({:tokenlookupself}, _from, state) do
+    Token.handle(:lookupself, nil, state)
+  end
+
+  def handle_call({:gettoken}, _from, state) do
+    case state do
+      %{token: x} -> {:reply, x, state}
+      %{} -> {:reply, nil, state}
+    end
   end
 
   # environment

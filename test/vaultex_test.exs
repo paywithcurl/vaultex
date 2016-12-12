@@ -53,6 +53,26 @@ defmodule VaultexTest do
     assert Vaultex.Client.token_renew(renew_token, :token, valid_token) == {:ok}
   end
 
+  test "Token self renewal" do
+    assert Vaultex.Client.token_renew_self(:token, valid_token) == {:ok}
+  end
+
+  test "Token lookup" do
+    {token} = valid_token
+    case Vaultex.Client.token_lookup(token, :token, root_token) do
+      {:ok, %{"id" => id}} -> assert id == token
+      x -> raise "Unexpected lookup result #{inspect x}"
+    end
+  end
+
+  test "Token self lookup" do
+    token = Vaultex.Client.client_token
+    case Vaultex.Client.token_lookup_self(:token, valid_token) do
+      {:ok, %{"id" => id}} -> assert id == token
+      x -> raise "Unexpected lookup result #{inspect x}"
+    end
+  end
+
   # helpers
   defp valid_userpass do
     {System.get_env("TEST_USER"), System.get_env("TEST_PASSWORD")}
@@ -68,6 +88,10 @@ defmodule VaultexTest do
 
   defp valid_token do
     {System.get_env("VAULT_TOKEN")}
+  end
+
+  defp root_token do
+    {System.get_env("VAULT_ROOT_TOKEN")}
   end
 
   defp valid_app_id do

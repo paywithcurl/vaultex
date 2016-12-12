@@ -44,6 +44,9 @@ export TEST_USER_ID=valid-user-id
 vault write auth/token/roles/test_role period="1h" allowed_policies=test-policy
 export VAULT_TOKEN=`vault token-create -format=json -role test_role | jq -r ".auth.client_token"`
 
+echo "--------------------------------------------------------------------------------"
+echo "ROOT_VAULT_TOKEN=${VAULT_ROOT_TOKEN}"
+echo "VAUL_TOKEN=${VAULT_TOKEN}"
 
 ## Run the tests
 mix test
