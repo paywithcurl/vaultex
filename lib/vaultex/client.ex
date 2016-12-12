@@ -18,9 +18,16 @@ defmodule Vaultex.Client do
   def init(state) do
     addr = get_env(:addr)
     url = case addr do
-	    nil -> "#{get_env(:scheme)}://#{get_env(:host)}:#{get_env(:port)}/#{@version}/"
-	    _ -> addr
-    end
+	    nil -> "#{get_env(:scheme)}://#{get_env(:host)}:#{get_env(:port)}"
+	    _ -> "#{addr}"
+	  end
+
+    # add the version to the path
+    suffix = "#{@version}/"
+    url = case String.ends_with?(url, [suffix]) do
+	    true -> url
+	    false -> "#{url}/#{suffix}"
+	  end
 
     {:ok, Map.merge(state, %{url: url})}
   end
