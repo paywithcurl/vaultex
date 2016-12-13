@@ -49,12 +49,28 @@ defmodule VaultexTest do
   end
 
   test "Token renewal" do
+    :timer.sleep(1000)
     {renew_token} = valid_token
-    assert Vaultex.Client.token_renew(renew_token, :token, valid_token) == {:ok}
+    {:ok, before_info} = Vaultex.Client.token_lookup(renew_token, :token, root_token)
+    assert before_info["ttl"] < token_ttl
+
+    assert Vaultex.Client.token_renew(renew_token, :token, root_token) == {:ok}
+    {:ok, after_info} = Vaultex.Client.token_lookup(renew_token, :token, root_token)
+
+    assert before_info["ttl"] < after_info["ttl"]
   end
 
   test "Token self renewal" do
+    :timer.sleep(1000)
+    Vaultex.Client.auth(:token, valid_token)
+
+    {:ok, before_info} = Vaultex.Client.token_lookup_self(:token, valid_token)
+    assert before_info["ttl"] < token_ttl
+
     assert Vaultex.Client.token_renew_self(:token, valid_token) == {:ok}
+
+    {:ok, after_info} = Vaultex.Client.token_lookup_self(:token, valid_token)
+    assert before_info["ttl"] < after_info["ttl"]
   end
 
   test "Token lookup" do
@@ -100,6 +116,10 @@ defmodule VaultexTest do
 
   defp invalid_app_id do
     {"invalid", "invalid"}
+  end
+
+  def token_ttl do
+    Integer.parse(System.get_env("TOKEN_TTL"))
   end
 
 end

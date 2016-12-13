@@ -2,6 +2,7 @@
 
 export VAULT_ADDR=http://127.0.0.1:8200
 export VAULT_ROOT_TOKEN=46eaf643-283a-6af9-4c9a-836914d1f7a6
+export TOKEN_TTL=3600
 
 # start vault dev server
 docker run --name vaultex-vault -e VAULT_DEV_ROOT_TOKEN_ID=${VAULT_ROOT_TOKEN} -p 8200:8200 -d vault
@@ -41,12 +42,13 @@ export TEST_USER_ID=valid-user-id
 
 
 ## Setup token auth
-vault write auth/token/roles/test_role period="1h" allowed_policies=test-policy
-export VAULT_TOKEN=`vault token-create -format=json -role test_role | jq -r ".auth.client_token"`
+vault write auth/token/roles/test_role period="${TOKEN_TTL}" allowed_policies=test-policy
+export VAULT_NEW_TOKEN=`vault token-create -format=json -role test_role | jq -r ".auth.client_token"`
+export VAULT_TOKEN=${VAULT_NEW_TOKEN}
 
 echo "--------------------------------------------------------------------------------"
-echo "ROOT_VAULT_TOKEN=${VAULT_ROOT_TOKEN}"
-echo "VAUL_TOKEN=${VAULT_TOKEN}"
+echo "VAULT_ROOT_TOKEN=${VAULT_ROOT_TOKEN}"
+echo "VAULT_NEW_TOKEN=${VAULT_NEW_TOKEN}"
 
 ## Run the tests
 mix test
