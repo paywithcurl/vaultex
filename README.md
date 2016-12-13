@@ -60,14 +60,62 @@ The following authentication methods are supported
 
 ### Operations
 
+Each operation has 2 interfaces, with and without auth information. The ones taking auth information
+will try to do the operation and authenticate and retry on failure. The others assume the client is
+already authenticated.
+
+#### Read
+
 ```
-Vaultex.Client.read("secret/key", auth_method, auth_options)
-Vaultex.Client.read("secret/key", :userpass, {"username", "password"})
+Vaultex.Client.read(path, auth_method, auth_options)
+Vaultex.Client.read(path)
 ```
 
 ```
-Vaultex.Client.write("secret/key", value, auth_method, auth_options)
-Vaultex.Client.write("secret/key", %{"test" => 123}, :token, {"1234-5678"})
+Vaultex.Client.read(path, :userpass, {"username", "password"})
+Vaultex.Client.read(path)
+```
+
+#### Write
+```
+Vaultex.Client.write(path, value, auth_method, auth_options)
+Vaultex.Client.write(path, value)
+```
+
+```
+Vaultex.Client.write(path, %{"test" => 123}, :token, {"1234-5678"})
+Vaultex.Client.write(path, %{"test" => 123})
+```
+
+#### Token lookup
+```
+Vaultex.Client.token_lookup(token, auth_method, auth_options)
+Vaultex.Client.token_lookup(token)
+```
+
+#### Token self lookup
+```
+Vaultex.Client.token_lookup_self(auth_method, auth_options)
+Vaultex.Client.token_lookup_self()
+```
+
+#### Token renew
+
+```
+Vaultex.Client.token_renew(token, auth_method, auth_options)
+Vaultex.Client.token_renew(token)
+```
+
+#### Token self renew
+```
+Vaultex.Client.token_renew_self(auth_method, auth_options)
+Vaultex.Client.token_renew_self()
+```
+
+#### Get the token used by Vaultex
+
+```
+Vaultex.Client.client_token
 ```
 
 ## Running the tests
