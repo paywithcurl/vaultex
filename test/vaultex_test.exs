@@ -64,12 +64,12 @@ defmodule VaultexTest do
     :timer.sleep(1000)
     Vaultex.Client.auth(:token, valid_token)
 
-    {:ok, before_info} = Vaultex.Client.token_lookup_self(:token, valid_token)
+    {:ok, before_info} = Vaultex.Client.token_lookup_self
     assert before_info["ttl"] < token_ttl
 
     assert Vaultex.Client.token_renew_self(:token, valid_token) == {:ok}
 
-    {:ok, after_info} = Vaultex.Client.token_lookup_self(:token, valid_token)
+    {:ok, after_info} = Vaultex.Client.token_lookup_self
     assert before_info["ttl"] < after_info["ttl"]
   end
 
