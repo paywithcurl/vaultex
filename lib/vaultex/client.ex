@@ -73,7 +73,7 @@ defmodule Vaultex.Client do
     wrap_retry_with_auth(fn -> read(key) end, auth_method, credentials)
   end
 
-  defp read(key) do
+  def read(key) do
     GenServer.call(:vaultex, {:read, key})
   end
 
@@ -96,7 +96,7 @@ defmodule Vaultex.Client do
     wrap_retry_with_auth(fn -> write(key, value) end, auth_method, credentials)
   end
 
-  defp write(key, value) do
+  def write(key, value) do
     GenServer.call(:vaultex, {:write, key, value})
   end
 
