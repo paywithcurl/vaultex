@@ -7,6 +7,7 @@ defmodule Vaultex.Client do
   use GenServer
   alias Vaultex.Auth, as: Auth
   alias Vaultex.Read, as: Read
+  alias Vaultex.Delete, as: Delete
   alias Vaultex.Write, as: Write
   alias Vaultex.Token, as: Token
   @version "v1"
@@ -75,6 +76,31 @@ defmodule Vaultex.Client do
 
   def read(key) do
     GenServer.call(:vaultex, {:read, key})
+  end
+
+  @doc """
+  Delete a secret from vault given a path.
+
+  ## Parameters
+
+    - key: A String path to be used for querying vault.
+    - auth_method: Auth backend to use for authenticating, can be one of [:app_id, :userpass]
+    - credentials: An {app_id, user_id} tuple used for authentication
+
+  ## Examples
+
+    iex> Vaultex.Client.delete "secret/foo", :app_id, {app_id, user_id}
+    {:ok, %{"value" => bar"}}
+
+    iex> Vaultex.Client.delete "secret/baz", :userpass, {username, password}
+    {:error, ["Key not found"]}
+  """
+  def delete(key, auth_method, credentials) do
+    wrap_retry_with_auth(fn -> delete(key) end, auth_method, credentials)
+  end
+
+  def delete(key) do
+    GenServer.call(:vaultex, {:delete, key})
   end
 
   @doc """
@@ -153,6 +179,10 @@ defmodule Vaultex.Client do
   # callbacks
   def handle_call({:read, key}, _from, state) do
     Read.handle(key, state)
+  end
+
+  def handle_call({:delete, key}, _from, state) do
+    Delete.handle(key, state)
   end
 
   def handle_call({:write, key, value}, _from, state) do

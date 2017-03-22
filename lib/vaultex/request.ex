@@ -12,6 +12,10 @@ defmodule Vaultex.Request do
     HTTPoison.request(:put, url, Poison.Encoder.encode(params, []), [{"X-Vault-Token", token}])
   end
 
+  def delete(url, token) do
+    HTTPoison.request(:delete, url, "",  [{"X-Vault-Token", token}])
+  end
+
   def handle_response({:ok, response}, state) do
     case response.status_code do
       204 -> {:reply, {:ok}, state}
