@@ -46,7 +46,7 @@ defmodule Vaultex.Auth do
   end
 
   defp request(:get, url) do
-    HTTPoison.request(:get, url)
+    HTTPoison.request(:get, url, "", [])
   end
 
   defp get_nonce do

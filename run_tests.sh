@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
-export VAULT_ADDR=http://127.0.0.1:8200
+export VAULT_ADDR=http://192.168.99.100:8200
 export VAULT_ROOT_TOKEN=46eaf643-283a-6af9-4c9a-836914d1f7a6
 export TOKEN_TTL=3600
-
+export CONTAINER_NAME=vaultex-vault-$(docker ps -a | wc -l | awk '{$1=$1};1')
 # start vault dev server
-docker run --name vaultex-vault -e VAULT_DEV_ROOT_TOKEN_ID=${VAULT_ROOT_TOKEN} -p 8200:8200 -d vault
+docker run --name ${CONTAINER_NAME} -e VAULT_DEV_ROOT_TOKEN_ID=${VAULT_ROOT_TOKEN} -p 8200:8200 -d vault
 export VAULT_TOKEN=${VAULT_ROOT_TOKEN}
 
 # Prepare vault setup for tests
@@ -53,4 +53,4 @@ echo "VAULT_NEW_TOKEN=${VAULT_NEW_TOKEN}"
 ## Run the tests
 mix test
 
-docker rm -f vaultex-vault
+docker rm -f ${CONTAINER_NAME}

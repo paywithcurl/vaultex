@@ -75,10 +75,7 @@ defmodule VaultexTest do
 
   test "Token lookup" do
     {token} = valid_token()
-    case Vaultex.Client.token_lookup(token, :token, root_token()) do
-      {:ok, %{"id" => id}} -> assert id == token
-      x -> raise "Unexpected lookup result #{inspect x}"
-    end
+    assert {:ok, %{"id" => ^token}} = Vaultex.Client.token_lookup(token, :token, root_token())
   end
 
   test "Token self lookup" do
