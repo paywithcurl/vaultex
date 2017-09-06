@@ -18,7 +18,7 @@ defmodule Vaultex.Request do
 
   def handle_response({:ok, response}, state) do
     case response.status_code do
-      204 -> {:reply, {:ok}, state}
+      204 -> {:reply, :ok, state}
       _ -> parse_body(response.body, state)
     end
   end
@@ -29,7 +29,7 @@ defmodule Vaultex.Request do
 
   def parse_body(body, state) do
     case body |> Poison.Parser.parse! do
-      %{"data" => nil} -> {:reply, {:ok}, state}
+      %{"data" => nil} -> {:reply, :ok, state}
       %{"data" => data} -> {:reply, {:ok, data}, state}
       %{"errors" => []} -> {:reply, {:error, ["Key not found"]}, state}
       %{"errors" => messages} -> {:reply, {:error, messages}, state}

@@ -44,7 +44,7 @@ defmodule VaultexTest do
 
   test "Write of valid secret key returns the correct value" do
     value = %{"test" => 123, "test2" => 456}
-    assert Vaultex.Client.write("secret/allowed/write/valid", value, :userpass, valid_userpass()) == {:ok}
+    assert Vaultex.Client.write("secret/allowed/write/valid", value, :userpass, valid_userpass()) == :ok
     assert Vaultex.Client.read("secret/allowed/write/valid", :userpass, valid_userpass()) == {:ok, value}
   end
 
@@ -54,7 +54,7 @@ defmodule VaultexTest do
     {:ok, before_info} = Vaultex.Client.token_lookup(renew_token, :token, root_token())
     assert before_info["ttl"] < token_ttl()
 
-    assert Vaultex.Client.token_renew(renew_token, :token, root_token()) == {:ok}
+    assert Vaultex.Client.token_renew(renew_token, :token, root_token()) == :ok
     {:ok, after_info} = Vaultex.Client.token_lookup(renew_token, :token, root_token())
 
     assert before_info["ttl"] < after_info["ttl"]
@@ -67,7 +67,7 @@ defmodule VaultexTest do
     {:ok, before_info} = Vaultex.Client.token_lookup_self
     assert before_info["ttl"] < token_ttl()
 
-    assert Vaultex.Client.token_renew_self(:token, valid_token()) == {:ok}
+    assert Vaultex.Client.token_renew_self(:token, valid_token()) == :ok
 
     {:ok, after_info} = Vaultex.Client.token_lookup_self
     assert before_info["ttl"] < after_info["ttl"]
