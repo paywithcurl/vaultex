@@ -1,7 +1,6 @@
 defmodule Vaultex.Client do
   @moduledoc """
   Provides a functionality to authenticate and read from a vault endpoint.
-  The communication relies on :app_id and :user_id variables being set.
   """
 
   use GenServer
@@ -17,38 +16,30 @@ defmodule Vaultex.Client do
   end
 
   def init(state) do
-    addr = get_env(:addr)
-    url = case addr do
-	    nil -> "#{get_env(:scheme)}://#{get_env(:host)}:#{get_env(:port)}"
-	    _ -> "#{addr}"
-	  end
-
-    # add the version to the path
-    suffix = "#{@version}/"
-    url = case String.ends_with?(url, [suffix]) do
-	    true -> url
-	    false -> "#{url}/#{suffix}"
-	  end
-
-    {:ok, Map.merge(state, %{url: url})}
+    {:ok, Map.merge(state, %{url: url()})}
   end
 
   @doc """
-  Authenticates with vault using an {app_id, user_id} tuple. This must be executed before attempting to read secrets from vault.
+  Authenticates with vault using a tuple. This can be executed before attempting to read secrets from vault.
 
   ## Parameters
 
-    - method: Auth backend to use for authenticating, can be one of [:app_id, :userpass]
-    - credentials: An {app_id, user_id} tuple used for authentication
+    - method: Auth backend to use for authenticating, can be one of `:approle, :app_id, :userpass, :github`
+    - credentials: A tuple used for authentication depending on the method, `{role_id, secret_id}` for :approle, `{app_id, user_id}` for `:app_id`, `{username, password}` for `:userpass`, `{github_token}` for `:github`
 
   ## Examples
 
+    ```
     iex> Vaultex.Client.auth(:app_id, {app_id, user_id})
     {:ok, :authenticated}
 
     iex> Vaultex.Client.auth(:userpass, {username, password})
     {:error, ["Something didn't work"]}
- """
+
+    iex> Vaultex.Client.auth(:github, {github_token})
+    {:ok, :authenticated}
+    ```
+  """
   def auth(method, credentials) do
     GenServer.call(:vaultex, {:auth, method, credentials})
   end
@@ -59,22 +50,27 @@ defmodule Vaultex.Client do
   ## Parameters
 
     - key: A String path to be used for querying vault.
-    - auth_method: Auth backend to use for authenticating, can be one of [:app_id, :userpass]
-    - credentials: An {app_id, user_id} tuple used for authentication
+    - auth_method and credentials: See Vaultex.Client.auth
 
   ## Examples
 
+    ```
     iex> Vaultex.Client.read "secret/foo", :app_id, {app_id, user_id}
-    {:ok, %{"value" => bar"}}
+    {:ok, %{"value" => "bar"}}
 
     iex> Vaultex.Client.read "secret/baz", :userpass, {username, password}
     {:error, ["Key not found"]}
+
+    iex> Vaultex.Client.read "secret/bar", :github, {github_token}
+    {:ok, %{"value" => "bar"}}
+    ```
+
   """
   def read(key, auth_method, credentials) do
     wrap_retry_with_auth(fn -> read(key) end, auth_method, credentials)
   end
 
-  def read(key) do
+  defp read(key) do
     GenServer.call(:vaultex, {:read, key})
   end
 
@@ -99,24 +95,25 @@ defmodule Vaultex.Client do
     wrap_retry_with_auth(fn -> delete(key) end, auth_method, credentials)
   end
 
-  def delete(key) do
+  defp delete(key) do
     GenServer.call(:vaultex, {:delete, key})
   end
 
   @doc """
-  Writes a secret to vault given a path.
+  Writes a secret to Vault given a path.
 
   ## Parameters
 
-    - key: A String path to be used for querying vault.
-    - value: A Map of values to store
-    - auth_method: Auth backend to use for authenticating, can be one of [:app_id, :userpass]
-    - credentials: An {app_id, user_id} tuple used for authentication
+    - key: A String path where the secret will be written.
+    - value: A String => String map that will be stored in Vault
+    - auth_method and credentials: See Vaultex.Client.auth
 
   ## Examples
 
-    iex> Vaultex.Client.write "secret/foo", %{"test" => 123}, :app_id, {app_id, user_id}
-    {:ok}
+    ```
+    iex> Vaultex.Client.write "secret/foo", %{"value" => "bar"}, :app_id, {app_id, user_id}
+    :ok
+    ```
   """
   def write(key, value, auth_method, credentials) do
     wrap_retry_with_auth(fn -> write(key, value) end, auth_method, credentials)
@@ -142,7 +139,7 @@ defmodule Vaultex.Client do
   ## Examples
 
     iex> Vaultex.Client.token_renw "123-456", :app_id, {app_id, user_id}
-    {:ok}
+    :ok
   """
   def token_renew(token, auth_method, credentials) do
     wrap_retry_with_auth(fn -> token_renew(token) end, auth_method, credentials)
@@ -217,6 +214,27 @@ defmodule Vaultex.Client do
   end
 
   # environment
+
+  defp url do
+    "#{scheme()}://#{host()}:#{port()}/#{@version}/"
+  end
+
+  defp host do
+    parsed_vault_addr().host || get_env(:host)
+  end
+
+  defp port do
+    parsed_vault_addr().port || get_env(:port)
+  end
+
+  defp scheme do
+    parsed_vault_addr().scheme || get_env(:scheme)
+  end
+
+  defp parsed_vault_addr do
+    get_env(:vault_addr) |> to_string |> URI.parse
+  end
+
   defp get_env(:host) do
     System.get_env("VAULT_HOST") || Application.get_env(:vaultex, :host) || "localhost"
   end
@@ -229,20 +247,19 @@ defmodule Vaultex.Client do
       System.get_env("VAULT_SCHEME") || Application.get_env(:vaultex, :scheme) || "http"
   end
 
-  defp get_env(:addr) do
-      System.get_env("VAULT_ADDR") || Application.get_env(:vaultex, :addr) || nil
+  defp get_env(:vault_addr) do
+    System.get_env("VAULT_ADDR") || Application.get_env(:vaultex, :vault_addr)
   end
 
   # helpers
   defp wrap_retry_with_auth(cb, auth_method, credentials) do
     response = cb.()
     case response do
-      {:ok} -> response
+      :ok -> response
       {:ok, _} -> response
       {:error, _} ->
         with {:ok, _} <- auth(auth_method, credentials),
           do: cb.()
     end
   end
-
 end
