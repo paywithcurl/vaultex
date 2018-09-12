@@ -29,32 +29,32 @@ defmodule VaultexTest do
   end
 
   test "Read of valid secret key returns the correct value" do
-    assert Vaultex.Client.read("secret/allowed/read/valid", :userpass, valid_userpass()) ==
+    assert Vaultex.Client.read("generic/allowed/read/valid", :userpass, valid_userpass()) ==
              {:ok, %{"value" => "bar"}}
   end
 
   test "Read of non existing secret key returns error" do
-    assert Vaultex.Client.read("secret/allowed/read/invalid", :userpass, valid_userpass()) ==
+    assert Vaultex.Client.read("generic/allowed/read/invalid", :userpass, valid_userpass()) ==
              {:error, ["Key not found"]}
   end
 
   test "Read of secret not allowed by policy returns error" do
-    assert Vaultex.Client.read("secret/forbidden/valid", :userpass, valid_userpass()) ==
-             {:error, ["permission denied"]}
+    assert Vaultex.Client.read("generic/forbidden/valid", :userpass, valid_userpass()) ==
+             {:error, ["1 error occurred:\n\n* permission denied"]}
   end
 
   test "Read of existing secret key given bad authentication returns error" do
-    assert Vaultex.Client.read("secret/allowed_read", :token, invalid_token()) ==
+    assert Vaultex.Client.read("generic/allowed_read", :token, invalid_token()) ==
              {:error, ["permission denied"]}
   end
 
   test "Write of valid secret key returns the correct value" do
     value = %{"test" => 123, "test2" => 456}
 
-    assert Vaultex.Client.write("secret/allowed/write/valid", value, :userpass, valid_userpass()) ==
+    assert Vaultex.Client.write("generic/allowed/write/valid", value, :userpass, valid_userpass()) ==
              {:ok}
 
-    assert Vaultex.Client.read("secret/allowed/write/valid", :userpass, valid_userpass()) ==
+    assert Vaultex.Client.read("generic/allowed/write/valid", :userpass, valid_userpass()) ==
              {:ok, value}
   end
 

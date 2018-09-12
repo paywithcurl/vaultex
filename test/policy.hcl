@@ -2,10 +2,14 @@ path "auth/token/renew/*" {
     policy = "write"
 }
 
-path "secret/allowed/read/*" {
+path "auth/token/create" {
+    policy = "write"
+}
+
+path "generic/allowed/read/*" {
   policy = "read"
 }
 
-path "secret/allowed/write/*" {
+path "generic/allowed/write/*" {
   policy = "write"
 }

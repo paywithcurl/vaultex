@@ -6,7 +6,7 @@ export VAULT_ROOT_TOKEN=46eaf643-283a-6af9-4c9a-836914d1f7a6
 export TOKEN_TTL=3600
 
 # start vault dev server
-docker run --name vaultex-vault -e VAULT_DEV_ROOT_TOKEN_ID=${VAULT_ROOT_TOKEN} -p 8290:8200 -d vault:0.6.4
+docker run --name vaultex-vault -e VAULT_DEV_ROOT_TOKEN_ID=${VAULT_ROOT_TOKEN} -p 8290:8200 -d vault:latest
 export VAULT_TOKEN=${VAULT_ROOT_TOKEN}
 
 # Prepare vault setup for tests
@@ -21,9 +21,13 @@ while true; do
     sleep 0.5
 done
 
+set -e
+# re-enable the old storage backend
+vault secrets enable generic
+
 ## Add data
-vault write secret/allowed/read/valid value=bar
-vault write secret/forbidden/read/valid value=flip
+vault write generic/allowed/read/valid value=bar
+vault write generic/forbidden/read/valid value=flip
 
 ## Setup user pass auth
 export TEST_USER=twist
