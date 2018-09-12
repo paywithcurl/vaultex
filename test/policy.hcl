@@ -13,3 +13,11 @@ path "generic/allowed/read/*" {
 path "generic/allowed/write/*" {
   policy = "write"
 }
+
+path "secret/data/allowed/read/*" {
+  policy = "read"
+}
+
+path "/secret/data/allowed/write/*" {
+  policy = "write"
+}

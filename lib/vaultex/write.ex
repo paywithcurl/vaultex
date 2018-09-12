@@ -2,7 +2,7 @@ defmodule Vaultex.Write do
   import Vaultex.Request
 
   def handle(key, value, state = %{token: token}) do
-    put(:"#{state.url}#{key}", value, token)
+    post(:"#{state.url}#{key}", value, token)
     |> handle_response(state)
   end
 

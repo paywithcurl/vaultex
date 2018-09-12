@@ -10,6 +10,8 @@ defmodule Vaultex.Client do
   alias Vaultex.Delete, as: Delete
   alias Vaultex.Write, as: Write
   alias Vaultex.Token, as: Token
+  alias Vaultex.KV, as: KV
+
   @version "v1"
 
   def start_link() do
@@ -184,6 +186,22 @@ defmodule Vaultex.Client do
     wrap_retry_with_auth(fn -> token_create(params) end, auth_method, credentials)
   end
 
+  def kv_put(key, data, options, auth_method, credentials) do
+    wrap_retry_with_auth(fn -> kv_put(key, data, options) end, auth_method, credentials)
+  end
+
+  def kv_put(key, data, options) do
+    GenServer.call(:vaultex, {:kvput, key, data, options})
+  end
+
+  def kv_get(key, version, auth_method, credentials) do
+    wrap_retry_with_auth(fn -> kv_get(key, version) end, auth_method, credentials)
+  end
+
+  def kv_get(key, version) do
+    GenServer.call(:vaultex, {:kvget, key, version})
+  end
+
   def token_create(params) do
     GenServer.call(:vaultex, {:tokencreate, params})
   end
@@ -223,6 +241,14 @@ defmodule Vaultex.Client do
 
   def handle_call({:tokencreate, params}, _from, state) do
     Token.handle(:create, params, state)
+  end
+
+  def handle_call({:kvput, key, data, options}, _from, state) do
+    KV.handle(:put, key, data, options, state)
+  end
+
+  def handle_call({:kvget, key, version}, _from, state) do
+    KV.handle(:get, key, version, state)
   end
 
   def handle_call({:gettoken}, _from, state) do

@@ -29,6 +29,9 @@ vault secrets enable generic
 vault write generic/allowed/read/valid value=bar
 vault write generic/forbidden/read/valid value=flip
 
+vault kv put secret/allowed/read/valid value=bar
+vault kv put secret/forbidden/read/valid value=flip
+
 ## Setup user pass auth
 export TEST_USER=twist
 export TEST_PASSWORD=nuggy

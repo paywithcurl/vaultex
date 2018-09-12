@@ -10,7 +10,7 @@ The package can be installed as:
 
 ```elixir
 def deps do
-  [{:vaultex, "~> 0.2.0"}]
+  [{:vaultex, "~> 0.4.0"}]
 end
 ```
   2. Ensure vaultex is started before your application:
@@ -117,6 +117,33 @@ Vaultex.Client.token_renew_self()
 ```
 Vaultex.Client.client_token
 ```
+
+#### Create a new token
+
+```
+Vaultex.Client.token_create(data, auth_method, auth_options)
+Vaultex.Client.token_create(data)
+```
+
+#### KV Put
+
+```
+Vaultex.Client.kv_put(path, data, options, auth_method, auth_options)
+Vaultex.Client.kv_put(path, data, options)
+```
+
+The path should be `mount/data/path`, on vault 0.8.3 and up the `secret/` mount is kv so `secret/data/my/secret`
+
+#### KV Get
+
+```
+Vaultex.Client.kv_get(path, version, auth_method, auth_options)
+Vaultex.Client.kv_get(path, version)
+```
+
+The path should be `mount/data/path`, on vault 0.8.3 and up the `secret/` mount is kv so `secret/data/my/secret`
+If version is nil it will fetch the latest version
+
 
 ## Running the tests
 

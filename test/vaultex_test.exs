@@ -101,6 +101,90 @@ defmodule VaultexTest do
     end
   end
 
+  test "Token KV put" do
+    value = %{"test" => 123, "test2" => 456}
+
+    {:ok, %{"version" => 1}} =
+      Vaultex.Client.kv_put(
+        "secret/data/allowed/write/valid",
+        value,
+        %{},
+        :userpass,
+        valid_userpass()
+      )
+  end
+
+  test "Token KV get" do
+    {:ok, %{"data" => %{"value" => "bar"}, "metadata" => %{"version" => 1}}} =
+      Vaultex.Client.kv_get(
+        "secret/data/allowed/read/valid",
+        nil,
+        :userpass,
+        valid_userpass()
+      )
+  end
+
+  test "Token KV versioning" do
+    value1 = %{"test" => 123, "test2" => 456}
+
+    {:ok, %{"version" => 1}} =
+      Vaultex.Client.kv_put(
+        "secret/data/allowed/write/version",
+        value1,
+        %{},
+        :userpass,
+        valid_userpass()
+      )
+
+    value2 = %{"test" => 123, "test2" => 456}
+
+    {:ok, %{"version" => 2}} =
+      Vaultex.Client.kv_put(
+        "secret/data/allowed/write/version",
+        value2,
+        %{},
+        :userpass,
+        valid_userpass()
+      )
+
+    # latest should be version 2
+    {:ok, %{"data" => ^value2, "metadata" => %{"version" => 2}}} =
+      Vaultex.Client.kv_get(
+        "secret/data/allowed/write/version",
+        nil,
+        :userpass,
+        valid_userpass()
+      )
+
+    # Get version 1
+    {:ok, %{"data" => ^value1, "metadata" => %{"version" => 1}}} =
+      Vaultex.Client.kv_get(
+        "secret/data/allowed/write/version",
+        1,
+        :userpass,
+        valid_userpass()
+      )
+
+    # Get version 2
+    {:ok, %{"data" => ^value2, "metadata" => %{"version" => 2}}} =
+      Vaultex.Client.kv_get(
+        "secret/data/allowed/write/version",
+        2,
+        :userpass,
+        valid_userpass()
+      )
+  end
+
+  test "Token create" do
+    new_token_id = "12345"
+    params = %{id: new_token_id, num_uses: 3, ttl: "1h"}
+
+    case Vaultex.Client.token_create(params, :token, root_token()) do
+      {:ok, %{"client_token" => id, "lease_duration" => 3600}} -> assert id == new_token_id
+      x -> raise "Unexpected lookup result #{inspect(x)}"
+    end
+  end
+
   # helpers
   defp valid_userpass do
     {System.get_env("TEST_USER"), System.get_env("TEST_PASSWORD")}

@@ -28,10 +28,13 @@ defmodule Vaultex.Request do
 
   def parse_body(body, state) do
     case body |> Poison.Parser.parse!() do
+      %{"data" => nil, "auth" => auth} -> {:reply, {:ok, auth}, state}
       %{"data" => nil} -> {:reply, {:ok}, state}
       %{"data" => data} -> {:reply, {:ok, data}, state}
       %{"errors" => []} -> {:reply, {:error, ["Key not found"]}, state}
       %{"errors" => messages} -> {:reply, {:error, messages}, state}
+      %{"data" => %{"data" => data}} -> {:reply, {:ok, data}, state}
+      %{"data" => data} -> {:reply, {:ok, data}, state}
     end
   end
 end
