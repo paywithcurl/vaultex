@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
+docker rm -f vaultex-vault 2>/dev/null
 
-export VAULT_ADDR=http://127.0.0.1:8200
+export VAULT_ADDR=http://127.0.0.1:8290
 export VAULT_ROOT_TOKEN=46eaf643-283a-6af9-4c9a-836914d1f7a6
 export TOKEN_TTL=3600
 
 # start vault dev server
-docker run --name vaultex-vault -e VAULT_DEV_ROOT_TOKEN_ID=${VAULT_ROOT_TOKEN} -p 8200:8200 -d vault
+docker run --name vaultex-vault -e VAULT_DEV_ROOT_TOKEN_ID=${VAULT_ROOT_TOKEN} -p 8290:8200 -d vault:0.6.4
 export VAULT_TOKEN=${VAULT_ROOT_TOKEN}
 
 # Prepare vault setup for tests
@@ -13,7 +14,7 @@ export VAULT_TOKEN=${VAULT_ROOT_TOKEN}
 ## Policy
 # try again if it fails as vault takes some time to be up
 while true; do
-    vault policy-write test-policy test/policy.hcl
+    vault policy-write test-policy test/policy.hcl 2>/dev/null
     if [ $? -eq 0 ]; then
 	break
     fi
@@ -28,13 +29,13 @@ vault write secret/forbidden/read/valid value=flip
 export TEST_USER=twist
 export TEST_PASSWORD=nuggy
 
-vault auth-enable userpass
+vault auth enable userpass
 vault write auth/userpass/users/${TEST_USER} \
     password=${TEST_PASSWORD} \
     policies=test-policy
 
 ## Setup app-id auth
-vault auth-enable app-id
+vault auth enable app-id
 vault write auth/app-id/map/app-id/valid-app-id value=test-policy
 vault write auth/app-id/map/user-id/valid-user-id value=valid-app-id
 export TEST_APP_ID=valid-app-id
