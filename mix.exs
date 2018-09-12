@@ -18,8 +18,7 @@ defmodule Vaultex.Mixfile do
   #
   # Type "mix help compile.app" for more information
   def application do
-    [applications: [:logger, :httpoison],
-     mod: {Vaultex, []}]
+    [applications: [:logger, :httpoison], mod: {Vaultex, []}]
   end
 
   # Dependencies can be Hex packages:
@@ -32,8 +31,7 @@ defmodule Vaultex.Mixfile do
   #
   # Type "mix help deps" for more examples and options
   defp deps do
-    [{:httpoison, "~> 0.10.0"},
-    {:poison, "~> 2.0"}]
+    [{:httpoison, "~> 0.10.0"}, {:poison, "~> 2.0"}]
   end
 
   defp description do
