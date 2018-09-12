@@ -18,37 +18,41 @@ defmodule Vaultex.Client do
 
   def init(state) do
     addr = get_env(:addr)
-    url = case addr do
-	    nil -> "#{get_env(:scheme)}://#{get_env(:host)}:#{get_env(:port)}"
-	    _ -> "#{addr}"
-	  end
+
+    url =
+      case addr do
+        nil -> "#{get_env(:scheme)}://#{get_env(:host)}:#{get_env(:port)}"
+        _ -> "#{addr}"
+      end
 
     # add the version to the path
     suffix = "#{@version}/"
-    url = case String.ends_with?(url, [suffix]) do
-	    true -> url
-	    false -> "#{url}/#{suffix}"
-	  end
+
+    url =
+      case String.ends_with?(url, [suffix]) do
+        true -> url
+        false -> "#{url}/#{suffix}"
+      end
 
     {:ok, Map.merge(state, %{url: url})}
   end
 
   @doc """
-  Authenticates with vault using an {app_id, user_id} tuple. This must be executed before attempting to read secrets from vault.
+   Authenticates with vault using an {app_id, user_id} tuple. This must be executed before attempting to read secrets from vault.
 
-  ## Parameters
+   ## Parameters
 
-    - method: Auth backend to use for authenticating, can be one of [:app_id, :userpass]
-    - credentials: An {app_id, user_id} tuple used for authentication
+     - method: Auth backend to use for authenticating, can be one of [:app_id, :userpass]
+     - credentials: An {app_id, user_id} tuple used for authentication
 
-  ## Examples
+   ## Examples
 
-    iex> Vaultex.Client.auth(:app_id, {app_id, user_id})
-    {:ok, :authenticated}
+     iex> Vaultex.Client.auth(:app_id, {app_id, user_id})
+     {:ok, :authenticated}
 
-    iex> Vaultex.Client.auth(:userpass, {username, password})
-    {:error, ["Something didn't work"]}
- """
+     iex> Vaultex.Client.auth(:userpass, {username, password})
+     {:error, ["Something didn't work"]}
+  """
   def auth(method, credentials) do
     GenServer.call(:vaultex, {:auth, method, credentials})
   end
@@ -176,6 +180,14 @@ defmodule Vaultex.Client do
     GenServer.call(:vaultex, {:tokenlookupself})
   end
 
+  def token_create(params, auth_method, credentials) do
+    wrap_retry_with_auth(fn -> token_create(params) end, auth_method, credentials)
+  end
+
+  def token_create(params) do
+    GenServer.call(:vaultex, {:tokencreate, params})
+  end
+
   # callbacks
   def handle_call({:read, key}, _from, state) do
     Read.handle(key, state)
@@ -209,6 +221,10 @@ defmodule Vaultex.Client do
     Token.handle(:lookupself, nil, state)
   end
 
+  def handle_call({:tokencreate, params}, _from, state) do
+    Token.handle(:create, params, state)
+  end
+
   def handle_call({:gettoken}, _from, state) do
     case state do
       %{token: x} -> {:reply, x, state}
@@ -222,27 +238,31 @@ defmodule Vaultex.Client do
   end
 
   defp get_env(:port) do
-      System.get_env("VAULT_PORT") || Application.get_env(:vaultex, :port) || 8200
+    System.get_env("VAULT_PORT") || Application.get_env(:vaultex, :port) || 8200
   end
 
   defp get_env(:scheme) do
-      System.get_env("VAULT_SCHEME") || Application.get_env(:vaultex, :scheme) || "http"
+    System.get_env("VAULT_SCHEME") || Application.get_env(:vaultex, :scheme) || "http"
   end
 
   defp get_env(:addr) do
-      System.get_env("VAULT_ADDR") || Application.get_env(:vaultex, :addr) || nil
+    System.get_env("VAULT_ADDR") || Application.get_env(:vaultex, :addr) || nil
   end
 
   # helpers
   defp wrap_retry_with_auth(cb, auth_method, credentials) do
     response = cb.()
+
     case response do
-      {:ok} -> response
-      {:ok, _} -> response
+      {:ok} ->
+        response
+
+      {:ok, _} ->
+        response
+
       {:error, _} ->
         with {:ok, _} <- auth(auth_method, credentials),
-          do: cb.()
+             do: cb.()
     end
   end
-
 end

@@ -2,7 +2,7 @@ defmodule Vaultex.TokenRenewer do
   use GenServer
   require Logger
 
-  def start_link (opts) do
+  def start_link(opts) do
     GenServer.start_link(__MODULE__, %{}, opts)
   end
 
@@ -23,10 +23,12 @@ defmodule Vaultex.TokenRenewer do
 
   defp vault_renew_token(token) do
     response = Vaultex.Client.token_renew(token)
+
     case response do
       {:ok} -> Logger.info("Token renewed")
-      {:error, error} -> Logger.error("Token renewal failed #{inspect error}")
+      {:error, error} -> Logger.error("Token renewal failed #{inspect(error)}")
     end
+
     response
   end
 

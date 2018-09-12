@@ -1,11 +1,10 @@
 defmodule Vaultex.Request do
-
   def post(url, params, token) do
     HTTPoison.request(:post, url, Poison.Encoder.encode(params, []), [{"X-Vault-Token", token}])
   end
 
   def get(url, token) do
-    HTTPoison.request(:get, url, "",  [{"X-Vault-Token", token}])
+    HTTPoison.request(:get, url, "", [{"X-Vault-Token", token}])
   end
 
   def put(url, params, token) do
@@ -13,7 +12,7 @@ defmodule Vaultex.Request do
   end
 
   def delete(url, token) do
-    HTTPoison.request(:delete, url, "",  [{"X-Vault-Token", token}])
+    HTTPoison.request(:delete, url, "", [{"X-Vault-Token", token}])
   end
 
   def handle_response({:ok, response}, state) do
@@ -24,16 +23,15 @@ defmodule Vaultex.Request do
   end
 
   def handle_response({_, %HTTPoison.Error{reason: reason}}, state) do
-      {:reply, {:error, ["Bad response from vault", "#{reason}"]}, state}
+    {:reply, {:error, ["Bad response from vault", "#{reason}"]}, state}
   end
 
   def parse_body(body, state) do
-    case body |> Poison.Parser.parse! do
+    case body |> Poison.Parser.parse!() do
       %{"data" => nil} -> {:reply, {:ok}, state}
       %{"data" => data} -> {:reply, {:ok, data}, state}
       %{"errors" => []} -> {:reply, {:error, ["Key not found"]}, state}
       %{"errors" => messages} -> {:reply, {:error, messages}, state}
     end
   end
-
 end

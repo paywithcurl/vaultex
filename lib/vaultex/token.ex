@@ -1,5 +1,4 @@
 defmodule Vaultex.Token do
-
   import Vaultex.Request
 
   def handle(:renew, renew_token, %{token: token} = state) do
@@ -25,5 +24,4 @@ defmodule Vaultex.Token do
   def handle(_action, _key, %{} = state) do
     {:reply, {:error, ["Not Authenticated"]}, state}
   end
-
 end

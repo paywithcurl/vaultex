@@ -1,5 +1,4 @@
 defmodule Vaultex.Write do
-
   import Vaultex.Request
 
   def handle(key, value, state = %{token: token}) do
@@ -10,5 +9,4 @@ defmodule Vaultex.Write do
   def handle(_key, _value, state = %{}) do
     {:reply, {:error, ["Not Authenticated"]}, state}
   end
-
 end
