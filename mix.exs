@@ -31,7 +31,7 @@ defmodule Vaultex.Mixfile do
   #
   # Type "mix help deps" for more examples and options
   defp deps do
-    [{:httpoison, "~> 0.10.0"}, {:poison, "~> 2.0"}]
+    [{:httpoison, "~> 0.12.0"}, {:poison, "~> 2.0"}]
   end
 
   defp description do
